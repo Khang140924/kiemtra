@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Chủ - Quản Lý Học Phần</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .navbar { background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 100%) !important; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .navbar-brand { font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px; }
+        .search-input { border-radius: 20px 0 0 20px; border: none; padding-left: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .search-btn { border-radius: 0 20px 20px 0; padding: 8px 20px; font-weight: 600; }
+        .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(0,0,0,0.05); border-radius: 16px; overflow: hidden; background: #ffffff; }
+        .course-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04) !important; }
+        .card-img-top { height: 200px; object-fit: cover; transition: transform 0.6s ease; }
+        .course-card:hover .card-img-top { transform: scale(1.08); }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25); }
+        .btn-success:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4); }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-5 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/home">📚 Hệ Thống Quản Lý Học Phần</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                
+                <!-- Search form (Câu 8) -->
+                <form class="d-flex mx-auto" style="max-width: 400px; width: 100%;" th:action="@{/home}" method="get">
+                    <input class="form-control me-2 rounded-pill" type="search" name="keyword" th:value="${keyword}" placeholder="Tìm kiếm tên môn học..." aria-label="Search">
+                    <button class="btn btn-light rounded-pill text-primary fw-bold px-4" type="submit">Tìm</button>
+                </form>
+
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3" sec:authorize="isAuthenticated()">
+                        <span class="text-light fw-medium">Xin chào, <span sec:authentication="name"></span>!</span>
+                    </li>
+                    <li class="nav-item me-2" sec:authorize="!isAuthenticated()">
+                        <a th:href="@{/login}" class="btn btn-outline-light btn-sm px-3 rounded-pill">Đăng nhập</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a th:href="@{/register}" class="btn btn-warning btn-sm px-3 rounded-pill text-dark fw-bold">Đăng ký</a>
+                    </li>
+                    <li class="nav-item me-2" sec:authorize="hasAuthority('ADMIN')">
+                        <a th:href="@{/admin/courses}" class="btn btn-light btn-sm px-3 rounded-pill text-primary fw-bold">Quản lý (Admin)</a>
+                    </li>
+                    <!-- Câu 7: My Courses link -->
+                    <li class="nav-item me-2" sec:authorize="hasAuthority('STUDENT')">
+                        <a th:href="@{/my-courses}" class="btn btn-info btn-sm px-3 rounded-pill text-white fw-bold">My Courses</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm px-3 rounded-pill">Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Alert Messages -->
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show shadow-sm rounded-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><strong th:text="${successMsg}"></strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show shadow-sm rounded-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><strong th:text="${errorMsg}"></strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark" th:text="${keyword != null and !keyword.isEmpty()} ? 'Kết quả tìm kiếm cho: &quot;' + ${keyword} + '&quot;' : 'Danh sách Môn học nổi bật'"></h2>
+            <a th:if="${keyword != null and !keyword.isEmpty()}" th:href="@{/home}" class="btn btn-outline-secondary btn-sm rounded-pill">Xóa tìm kiếm</a>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <!-- Vòng lặp lấy dữ liệu môn học -->
+            <div class="col" th:each="course : ${courses}">
+                <div class="card h-100 course-card">
+                    <!-- Ảnh môn học (Fix ảnh hỏng, fallback qua Unsplash) -->
+                    <img th:if="${course.image != null and !course.image.isEmpty()}" 
+                         th:src="@{'/images/' + ${course.image}}" 
+                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';"
+                         class="card-img-top course-img" alt="Course Image">
+                    <img th:unless="${course.image != null and !course.image.isEmpty()}" 
+                         src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                         class="card-img-top course-img" alt="Placeholder Image">
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title fw-bold text-primary mb-3" th:text="${course.name}">Tên môn học</h5>
+                        <p class="card-text text-muted mb-2">
+                            <strong>Số tín chỉ:</strong> <span th:text="${course.credits}">3</span>
+                        </p>
+                        <p class="card-text text-muted mb-4">
+                            <strong>Giảng viên:</strong> <span th:text="${course.lecturer}">Tên giảng viên</span>
+                        </p>
+                        
+                        <div class="mt-auto">
+                            <!-- Nút Enroll: Câu 6 -->
+                            <a sec:authorize="hasAuthority('STUDENT') and !hasAuthority('ADMIN')" 
+                               th:href="@{'/enroll/' + ${course.id}}" 
+                               class="btn btn-success w-100 fw-bold rounded-pill text-uppercase" style="letter-spacing: 0.5px;">Tín Chỉ (Enroll)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 text-center" th:if="${courses == null or courses.isEmpty()}">
+                <p class="text-muted fs-5 mt-4">Không tìm thấy môn học nào phù hợp.</p>
+            </div>
+        </div>
+
+        <!-- Phân trang (Giữ nguyên keyword khi bấm next page) -->
+        <nav aria-label="Page navigation" class="mt-5 mb-5" th:if="${totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 1 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/(page=${currentPage - 1}, keyword=${keyword != null ? keyword : ''})}">Trang trước</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" 
+                    th:classappend="${currentPage == i ? 'active' : ''}">
+                    <a class="page-link" th:href="@{/(page=${i}, keyword=${keyword != null ? keyword : ''})}" th:text="${i}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/(page=${currentPage + 1}, keyword=${keyword != null ? keyword : ''})}">Trang sau</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0 fs-6 fw-medium">© 2026 - Phát triển hệ thống: Quản lý đăng ký học phần Tín chỉ (Câu 10 - Responsive Design)</p>
+            <p class="text-secondary small mt-1 mb-0">Hỗ trợ đầy đủ trải nghiệm trên mọi thiết bị: Mobile, Tablet và Desktop.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
